@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { User } from '../entities/user.entity';
 
 @Module({
     imports: [
@@ -11,6 +12,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
                 url: configService.get('DATABASE_URL'),
                 autoLoadEntities: true,
                 synchronize: true, // Dev only
+                entities: [User],
             }),
             inject: [ConfigService],
         }),
