@@ -15,5 +15,5 @@ export default function Home() {
     }
   }, [router]);
 
-  return <div>Loading...</div>; // Placeholder
+  return <div>Loading... DONE!</div>; // Placeholder
 }
