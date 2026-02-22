@@ -1,49 +1,72 @@
-name: Deploy PLearn  # Tên workflow, hiển thị trên GitHub Actions tab.
+name: Deploy PLearn
 
-on:  # Trigger khi push lên main.
+on:
   push:
-    branches: [ main ]  # Chỉ trigger trên branch main.
+    branches:
+      - main
 
-jobs:  # Các job chạy song song hoặc phụ thuộc.
+jobs:
 
-  build-frontend:  # Job 1: Build frontend.
-    runs-on: ubuntu-latest  # Máy ảo Ubuntu để chạy.
-    steps:  # Các bước thực hiện.
-    - uses: actions/checkout@v4  # Step 1: Checkout code từ repo.
-    - name: Setup Node.js  # Step 2: Cài Node.js.
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'  # Phiên bản Node (Next.js dùng 18+, dùng 20 cho an toàn).
-    - name: Install dependencies and build frontend  # Step 3: Install và build.
-      run: cd frontend && npm ci && npm run build  # npm ci để clean install, build để kiểm tra lỗi.
-
-  build-backend:  # Job 2: Build backend (tương tự).
+  build-frontend:
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-    - name: Install dependencies and build backend
-      run: cd backend && npm ci && npm run build
 
-  deploy:  # Job 3: Deploy, phụ thuộc vào 2 job build thành công.
-    needs: [build-frontend, build-backend]  # Chờ build xong mới chạy.
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+
+  build-backend:
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4  # Checkout lại code.
-    - name: Deploy Frontend to Vercel  # Step: Deploy frontend.
-      uses: amondnet/vercel-action@v25  # Action chính thức cho Vercel (cập nhật version mới nhất).
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}  # Secret từ GitHub.
-        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        working-directory: frontend  # Folder frontend.
-        vercel-args: '--prod'  # Deploy production.
 
-    - name: Deploy Backend to Render  # Step: Deploy backend.
-      uses: alexellis/arkade@master  # Hoặc dùng action chính thức, nhưng Render đơn giản hơn với webhook.
-      # Lưu ý: Render không có action sẵn như Vercel, nên dùng curl gọi webhook.
-      # Thay vì action, dùng step curl.
-      run: curl -X POST -d {} ${{ secrets.RENDER_WEBHOOK_URL }}  # Webhook để trigger deploy trên Render.
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Build backend
+        working-directory: backend
+        run: npm run build
+
+
+  deploy:
+    needs: [build-frontend, build-backend]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 🚀 Deploy Frontend to Vercel
+      - name: Deploy Frontend to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: frontend
+          vercel-args: '--prod'
+
+      # 🚀 Trigger Backend Deploy on Render
+      - name: Deploy Backend to Render
+        run: curl -X POST -d {} ${{ secrets.RENDER_WEBHOOK_URL }}
