@@ -14,14 +14,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # Improved: Supports monorepo change detection
+          fetch-depth: 2  # Good for monorepo change detection
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'  # Improved: Caches node_modules for faster builds
-          cache-dependency-path: frontend/package-lock.json  # Specific to frontend
+          node-version: '20'  # Or '18' if Next.js issues
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         working-directory: frontend
@@ -32,7 +32,7 @@ jobs:
         run: npm run build
 
       - name: Upload build artifacts (for debugging)
-        if: failure()  # Improved: Only on failure, for logs
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build-logs
@@ -84,18 +84,29 @@ jobs:
         with:
           node-version: '20'
 
-      # Deploy Frontend to Vercel
-      - name: Deploy Frontend to Vercel
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: frontend
-          vercel-args: '--prod'
-        env:  # Improved: Explicit env for action
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      # Install Vercel CLI (for monorepo support)
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      # Link Vercel project (essential for monorepo)
+      - name: Link Vercel Project
+        working-directory: frontend
+        run: vercel link --yes --project ${{ secrets.VERCEL_PROJECT_ID }} --scope ${{ secrets.VERCEL_ORG_ID }} --token ${{ secrets.VERCEL_TOKEN }}
+
+      # Pull Vercel Environment
+      - name: Pull Vercel Environment Information
+        working-directory: frontend
+        run: vercel pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }}
+
+      # Build Vercel Artifacts
+      - name: Build Project Artifacts
+        working-directory: frontend
+        run: vercel build --prod --token ${{ secrets.VERCEL_TOKEN }}
+
+      # Deploy to Vercel
+      - name: Deploy Project Artifacts to Vercel
+        working-directory: frontend
+        run: vercel deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }}
 
       # Trigger Backend Deploy on Render
       - name: Deploy Backend to Render
