@@ -57,7 +57,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 🚀 Deploy Frontend to Vercel
+      #  Deploy Frontend to Vercel
       - name: Deploy Frontend to Vercel
         uses: amondnet/vercel-action@v25
         with:
@@ -67,6 +67,6 @@ jobs:
           working-directory: frontend
           vercel-args: '--prod'
 
-      # 🚀 Trigger Backend Deploy on Render
+      #  Trigger Backend Deploy on Render
       - name: Deploy Backend to Render
         run: curl -X POST -d {} ${{ secrets.RENDER_WEBHOOK_URL }}
