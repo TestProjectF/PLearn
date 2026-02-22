@@ -7,16 +7,18 @@ on:
 
 jobs:
 
-  # ==============================
-  # 1️⃣ Build Backend (CI check)
-  # ==============================
+  # ==========================
+  # 1️⃣ Backend CI (build check)
+  # ==========================
   build-backend:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
@@ -29,24 +31,28 @@ jobs:
         run: npm run build
 
 
-  # ==============================
+  # ==========================
   # 2️⃣ Deploy
-  # ==============================
+  # ==========================
   deploy:
     needs: build-backend
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # 🚀 Deploy Frontend to Vercel (KHÔNG working-directory)
-      # Vì Root Directory trên Vercel đã set = frontend
+      # 🚀 Deploy Frontend to Vercel
+      # Root Directory trên Vercel phải là: frontend
       - name: Deploy Frontend to Vercel
-        run: npx vercel@latest --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: |
+          cd frontend
+          npx vercel@latest --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
 
       # 🚀 Trigger Backend Deploy on Render
       - name: Deploy Backend to Render
